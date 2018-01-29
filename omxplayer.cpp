@@ -1868,7 +1868,7 @@ do_exit:
   g_OMX.Deinitialize();
   g_RBP.Deinitialize();
 
-  printf("have a nice day ;)\n");
+  printf("have a good one ;)\n");
 
   // exit status success on playback end
   if (m_send_eos)
