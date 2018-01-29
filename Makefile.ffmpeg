@@ -1,11 +1,12 @@
-include Makefile.include
 
 CFLAGS=-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -DTARGET_POSIX -DTARGET_LINUX -fPIC -DPIC -D_REENTRANT -D_HAVE_SBRK -D_LARGEFILE64_SOURCE -DHAVE_CMAKE_CONFIG -DHAVE_VMCS_CONFIG -D_REENTRANT -DUSE_VCHIQ_ARM -DVCHI_BULK_ALIGN=1 -DVCHI_BULK_GRANULARITY=1 -DEGL_SERVER_DISPMANX -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D__VIDEOCORE4__ -DGRAPHICS_X_VG=1 -U_FORTIFY_SOURCE -Wall -DHAVE_OMXLIB -DUSE_EXTERNAL_FFMPEG  -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVUTIL_MEM_H -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_LIBAVFILTER_AVFILTER_H -DOMX -DOMX_SKIP64BIT
+
+FFMPEG_EXTRA_CFLAGS?=-mfpu=vfp -mfloat-abi=$(FLOAT) -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog
 
 WORK=$(PWD)
 
 .PHONY : all
-all: checkout configure compile
+all: compile
 
 .PHONY : copy
 copy:
@@ -13,7 +14,7 @@ copy:
 	$(HOST)-strip *.so*
 
 .PHONY : compile
-compile: 
+compile: configure
 	+$(MAKE) -C ffmpeg
 
 .PHONY : configure
@@ -22,7 +23,8 @@ configure:
 	CFLAGS="$(CFLAGS) ${INCLUDES}" \
 	LDFLAGS="" \
   ./configure \
-			--extra-cflags="-mfpu=vfp -mfloat-abi=$(FLOAT) -mno-apcs-stack-check -mstructure-size-boundary=32 -mno-sched-prolog" \
+			--extra-cflags="$(FFMPEG_EXTRA_CFLAGS)" \
+			--extra-ldflags="$(FFMPEG_EXTRA_LDFLAGS)" \
 			--enable-cross-compile \
 			--enable-shared \
 			--disable-static \
@@ -242,7 +244,9 @@ configure:
 			--disable-decoder=idf \
 			--disable-decoder=hevc \
 			--enable-decoder=opus \
-			--cross-prefix=$(HOST)-
+			--cross-prefix=$(HOST)- \
+			--disable-stripping \
+			--pkg-config=pkg-config
 
 .PHONY : clean
 clean:
@@ -255,5 +259,3 @@ checkout:
 .PHONY : install
 install:
 	cd ffmpeg; make -j9 DESTDIR="$(WORK)/ffmpeg_compiled" install
-	$(HOST)-strip ffmpeg_compiled/usr/local/lib/*.so
-
